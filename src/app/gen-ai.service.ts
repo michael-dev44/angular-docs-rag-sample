@@ -23,10 +23,27 @@ import {Observable} from 'rxjs';
 export class GenerativeLanguageService {
   private URL = 'http://127.0.0.1:5001/chatbot-demo-7e376/us-central1/generate_aqa_answer';
 
+  private chat_id = 'chatcmpl-123';
+  private chatcompetionsURL = `http://127.0.0.1:80/api/v1/chats_openai/${this.chat_id}/chat/completions`;
+
+  private model = 'model';
+  private streamBool = true;
+  private messages = [{'role': 'user', 'content': 'Say this is a test!'}];
+
+  private body = {
+    model: this.model,
+    messages: this.messages,
+    stream: this.streamBool,
+  };
+
   constructor(private http: HttpClient) {}
 
   async getAQAAnswer(prompt: string): Promise<Observable<AQAResponse>> {
     return this.http.get<AQAResponse>(`${this.URL}?text=${prompt}`);
+  }
+
+  async getAChatCompletion(prompt: string): Promise<Observable<any>> {
+    return this.http.post(`${this.chatcompetionsURL}`, this.body);
   }
 }
 export interface AQAResponse {
