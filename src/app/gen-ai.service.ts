@@ -45,6 +45,13 @@ export class GenerativeLanguageService {
   async getAChatCompletion(prompt: string): Promise<Observable<any>> {
     return this.http.post(`${this.chatcompetionsURL}`, this.body);
   }
+
+  // new code to test workflow
+  async getAChatCompletionStream(prompt: string): Promise<Observable<any>> {
+    return this.http.post(`${this.chatcompetionsURL}`, this.body, {
+      responseType: 'text',
+    });
+  }
 }
 export interface AQAResponse {
   answer: string;
