@@ -46,7 +46,7 @@ export class GenerativeLanguageService {
     return this.http.post(`${this.chatcompetionsURL}`, this.body);
   }
 
-  // new code to test workflow
+  // new code to test workflow testing with streaming
   async getAChatCompletionStream(prompt: string): Promise<Observable<any>> {
     return this.http.post(`${this.chatcompetionsURL}`, this.body, {
       responseType: 'text',
