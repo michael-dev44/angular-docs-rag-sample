@@ -29,6 +29,22 @@ jobs:
       - name: Restart app
         run: |
           ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+            # Update system
+            sudo apt update && sudo apt upgrade -y
+
+            # Install curl
+            sudo apt install -y curl
+
+            # Install Node.js 18 LTS
+            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+            sudo apt install -y nodejs
+
+            # Install PM2 globally
+            sudo npm install -g pm2
+
+            # Add PATH for non-interactive SSH (optional)
+            echo 'export PATH=$PATH:/usr/local/bin:/usr/bin' >> ~/.bashrc
+            source ~/.bashrc
             cd /home/ubuntu/app
             npm install --production
             pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
