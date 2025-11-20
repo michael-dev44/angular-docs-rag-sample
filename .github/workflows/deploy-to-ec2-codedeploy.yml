@@ -1,4 +1,4 @@
-name: Deploy Node App to EC2 via CodeDeploy
+name: Deploy to EC2
 
 on:
   push:
@@ -9,41 +9,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build project
-        run: npm run build
-
-      - name: Create deployment bundle
+      - name: Setup SSH key
         run: |
-          mkdir -p codedeploy
-          cp -r * codedeploy/
-          cp appspec.yml codedeploy/appspec.yml
-          cd codedeploy && zip -r ../deploy_bundle.zip .
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Upload bundle to S3
-        run: aws s3 cp deploy_bundle.zip s3://${{ secrets.S3_BUCKET }}/deploy_bundle.zip
-
-      - name: Create deployment
+      - name: Add EC2 host to known_hosts
         run: |
-          aws deploy create-deployment \
-            --application-name "${{ secrets.CODEDEPLOY_APP }}" \
-            --deployment-group-name "${{ secrets.CODEDEPLOY_GROUP }}" \
-            --s3-location bucket=${{ secrets.S3_BUCKET }},key=deploy_bundle.zip,bundleType=zip
-            --description "Deployment from GitHub Actions"
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy files to EC2
+        run: |
+          rsync -avz --exclude="node_modules" ./ ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app/
+
+      - name: Restart app
+        run: |
+          ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/ubuntu/app
+            npm install --production
+            pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
+          EOF
+      - name: Notify deployment success
+        run: echo "Deployment to EC2 completed successfully."
