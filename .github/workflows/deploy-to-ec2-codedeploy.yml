@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy Angular App to EC2 with Nginx
 
 on:
   push:
@@ -7,59 +7,76 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: dev
+    environment: prod
+
     steps:
-      - name: Checkout code
+      # 1️⃣ Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Install Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      # 3️⃣ Install dependencies and build Angular app
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Angular app (production)
+        run: npm run build -- --prod
+
+      # 4️⃣ Setup SSH key
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
+      # 5️⃣ Add EC2 host to known_hosts
       - name: Add EC2 host to known_hosts
-        run: |
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+        run: ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy files to EC2
-        run: |
-          rsync -avz --exclude="node_modules" ./ ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app/
-
-      - name: Install Node.js and PM2 on EC2
+      # 6️⃣ Install Nginx on EC2 and deploy files
+      - name: Deploy to EC2
         run: |
           ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-            # Update system
-            sudo apt update && sudo apt upgrade -y
+            # Update and install Nginx
+            sudo apt update
+            sudo apt install -y nginx
 
-            # Install curl
-            sudo apt install -y curl
+            # Stop default Nginx site (optional)
+            sudo rm -rf /var/www/html/*
 
-            # Install Node.js 22.x
-            curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-            sudo apt install -y nodejs
-            
-            
-            sudo npm install -g @angular/cli
-            
-            # Install PM2 globally if not installed
-            if ! command -v pm2 >/dev/null 2>&1; then
-              sudo npm install -g pm2
-            fi
+            # Ensure directory exists
+            sudo mkdir -p /var/www/html
 
-            # Ensure PM2 startup is configured only once
-            if ! systemctl list-units --full -all | grep -q pm2-ubuntu; then
-              # Setup PM2 startup service
-              pm2 startup systemd -u ubuntu --hp /home/ubuntu | tail -n 1 | sudo bash
-            fi
           EOF
 
-      - name: Restart app
-        run: |
+          # Copy Angular dist files to EC2
+          rsync -avz dist/* ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/dist/
+
+          # Move files to Nginx root and configure
           ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-            cd /home/ubuntu/app
-            npm install
-            pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
+            sudo cp -r /home/ubuntu/dist/* /var/www/html/
+            
+            # Configure Nginx for Angular SPA
+            sudo tee /etc/nginx/sites-available/default > /dev/null <<'NGINX_CONF'
+            server {
+                listen 80;
+                server_name _;
+
+                root /var/www/html;
+                index index.html;
+
+                location / {
+                    try_files $uri $uri/ /index.html;
+                }
+            }
+            NGINX_CONF
+
+            # Test and restart Nginx
+            sudo nginx -t
+            sudo systemctl restart nginx
           EOF
-      - name: Notify deployment success
-        run: echo "Deployment to EC2 completed successfully."
