@@ -35,11 +35,10 @@ jobs:
             # Install curl
             sudo apt install -y curl
 
-             # Install Node.js 22 LTS if not installed
-            if ! command -v node >/dev/null 2>&1; then
-              curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-              sudo apt install -y nodejs
-            fi
+            # Install Node.js 22.x
+            curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+            sudo apt install -y nodejs
+            
             
             sudo npm install -g @angular/cli
             
