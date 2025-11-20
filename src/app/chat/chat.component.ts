@@ -41,7 +41,9 @@ export class ChatComponent {
     'Adding a new route with the Router',
     'What is Angular?',
   ];
-  protected conversation: ChatBubble[] = [{type: 'answer', text: 'Hi there! How can I help?'}];
+  protected conversation: ChatBubble[] = [
+    {type: 'answer', text: 'Hi there person! How can I help?'},
+  ];
 
   private generativeLanguage = inject(GenerativeLanguageService);
 
@@ -52,7 +54,7 @@ export class ChatComponent {
     this.loading = true;
 
     await (
-      await this.generativeLanguage.getAQAAnswer(this.prompt)
+      await this.generativeLanguage.getDefaultAnswer(this.prompt)
     ).subscribe(async (res) => {
       if (res.questions) this.followUpQuestions = res.questions;
       this.addDialog(res.answer, res.url, false);

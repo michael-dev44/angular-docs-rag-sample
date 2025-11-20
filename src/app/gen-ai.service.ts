@@ -16,7 +16,7 @@
 
 import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {Observable} from 'rxjs';
+import {Observable, of} from 'rxjs';
 @Injectable({
   providedIn: 'root',
 })
@@ -40,6 +40,14 @@ export class GenerativeLanguageService {
 
   async getAQAAnswer(prompt: string): Promise<Observable<AQAResponse>> {
     return this.http.get<AQAResponse>(`${this.URL}?text=${prompt}`);
+  }
+  async getDefaultAnswer(prompt: string): Promise<Observable<AQAResponse>> {
+    return of<AQAResponse>({
+      answer: 'This is a default answer.',
+      probability: 0.9,
+      url: 'google.com',
+      questions: ['What is this?', 'How does it work?'],
+    });
   }
 
   async getAChatCompletion(prompt: string): Promise<Observable<any>> {
