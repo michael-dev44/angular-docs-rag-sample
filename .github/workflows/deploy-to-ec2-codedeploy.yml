@@ -53,10 +53,12 @@ jobs:
             sudo mkdir -p /var/www/html
 
           EOF
-
+      - name: Copy Angular dist files to EC2
+        run: |
           # Copy Angular dist files to EC2
           rsync -avz dist/* ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/dist/
-
+      - name: Move files to Nginx root and configure
+        run: |
           # Move files to Nginx root and configure
           ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
             sudo cp -r /home/ubuntu/dist/* /var/www/html/
