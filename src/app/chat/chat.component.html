@@ -20,27 +20,25 @@
       type="text"
       [(ngModel)]="question"
       (keydown.enter)="getAnswer()"
-      placeholder="Ask me about topics related to Angular"
+      placeholder="Ask me about topics related to Angular!"
     />
     <button class="pill" (click)="getAnswer()">Submit</button>
   </div>
   <div class="pill-wrapper">
     @for (item of followUpQuestions; track item) {
-      <button class="pill" (click)="getAnswer(item)">{{ item }}</button>
+    <button class="pill" (click)="getAnswer(item)">{{ item }}</button>
     }
   </div>
   @if (loading) {
-    <mat-progress-bar mode="query" class="loading"></mat-progress-bar>
+  <mat-progress-bar mode="query" class="loading"></mat-progress-bar>
   } @else {
-    <hr />
+  <hr />
   }
   <div class="chat-wrapper">
-    @for (item of conversation; track item) {
-      @if (item.type == 'question') {
-        <app-bubble [chat]="item" class="question" />
-      } @else {
-        <app-bubble [chat]="item" class="answer" />
-      }
-    }
+    @for (item of conversation; track item) { @if (item.type == 'question') {
+    <app-bubble [chat]="item" class="question" />
+    } @else {
+    <app-bubble [chat]="item" class="answer" />
+    } }
   </div>
 </div>
