@@ -67,9 +67,8 @@ jobs:
 
       # 🔟 Upload Angular build
       - name: Copy Angular dist files to EC2
-        run: |
-          rsync -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
-            dist/angular-chatbot/browser/ ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/dist/
+        run: rsync -avz dist/angular-chatbot/browser/ ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/dist/
+
 
       # 1️⃣1️⃣ Move files to Nginx root and configure
       - name: Move files and restart Nginx
